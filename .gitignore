@@ -1,0 +1,7 @@
+.idea/*
+*.iml
+.DS_Store
+target/*
+.sass-cache/
+mailer.properties
+imageveil-uses.csv
