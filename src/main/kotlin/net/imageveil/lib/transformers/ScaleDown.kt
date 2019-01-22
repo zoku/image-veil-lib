@@ -1,16 +1,15 @@
 package net.imageveil.lib.transformers
 
-import net.imageveil.lib.Config
 import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import kotlin.math.roundToInt
 
-class ScaleDown : Transformer {
+class ScaleDown(private val maxImageEdgeSize: Int = 1280) : Transformer {
     override fun transform(image: BufferedImage): BufferedImage {
         val scale = if (image.width > image.height) {
-            Config.transformers_scaleDown_maxImageEdgeSize.toDouble() / image.width
+            maxImageEdgeSize.toDouble() / image.width
         } else {
-            Config.transformers_scaleDown_maxImageEdgeSize.toDouble() / image.height
+            maxImageEdgeSize.toDouble() / image.height
         }
 
         val scaledImage = BufferedImage((image.width * scale).roundToInt(), (image.height * scale).roundToInt(), BufferedImage.TYPE_INT_RGB)

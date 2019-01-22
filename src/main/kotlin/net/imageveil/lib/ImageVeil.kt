@@ -35,21 +35,37 @@ class ImageVeil {
 }
 
 fun main(args: Array<String>) {
-    if (args.size < 2) {
-        throw Exception("Arguments must be input file's and output file's paths.")
+    if (args.size < 2 || (args.size == 1 && (args[0] == "-h" || args[0] == "--help"))) {
+        println("""
+            ImageVeil CLI help
+            ==================
+            Usage: java -jar image-veil-lib.jar IN_FILE OUT_FILE AREA1 AREA2 ...
+
+            Area: [x,y,w,h] e.g. [10,10,250,250]
+
+            At this time only JPEG is officially supported!
+        """.trimIndent())
+        System.exit(0)
+    }
+
+    val areas = arrayListOf<Area>()
+    val rawAreas = args.filter { it.startsWith("[") && it.endsWith("]") }
+    rawAreas.forEach { rawArea ->
+        val editedArea = rawArea.substring(1 until rawArea.length - 1)
+        val areaValues = editedArea.split(",")
+
+        areas.add(Area(areaValues[0].trim().toInt(), areaValues[1].trim().toInt(), areaValues[2].trim().toInt(), areaValues[3].trim().toInt()))
     }
 
     val imageFile = File(args[0])
     val imageMetaData = ImageMetadataReader.readMetadata(imageFile)
 
-    val areas = arrayListOf(Area(x = 250, y = 250, width = 250, height = 250))
-
     val iv = ImageVeil(imageFile)
 
-    iv.addTransformerToQueue(Rotate(imageMetaData))
+    iv.addTransformerToQueue(Rotate(metaData = imageMetaData))
     iv.addTransformerToQueue(Noise(percentageToAdd = .5, intensity = 30))
-    iv.addTransformerToQueue(SquareMosaic(areas))
-    iv.addTransformerToQueue(ScaleDown())
+    iv.addTransformerToQueue(SquareMosaic(areas = areas, squareSize = .02))
+    iv.addTransformerToQueue(ScaleDown(maxImageEdgeSize = 1280))
 
     val anonymisedImage = iv.run()
 

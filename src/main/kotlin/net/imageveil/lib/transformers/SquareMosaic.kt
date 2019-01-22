@@ -1,18 +1,17 @@
 package net.imageveil.lib.transformers
 
 import net.imageveil.lib.domain.Area
-import net.imageveil.lib.Config
 import org.slf4j.LoggerFactory
 import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import kotlin.math.roundToInt
 
-class SquareMosaic(private val areas: List<Area>, private val scaleX: Float = 1f, private val scaleY: Float = 1f) : Transformer {
+class SquareMosaic(private val areas: List<Area>, private val squareSize: Double) : Transformer {
     private val logger = LoggerFactory.getLogger("Transformers - SquareMosaic")
 
     override fun transform(image: BufferedImage): BufferedImage {
-        val squareLength = ((if (image.width > image.height) image.width else image.height) * Config.transformers_masks_squareMosaic_squareSize).roundToInt()
+        val squareLength = ((if (image.width > image.height) image.width else image.height) * squareSize).roundToInt()
 
         val squaredImage = BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB)
         val squaredG2D = squaredImage.graphics as Graphics2D
@@ -46,10 +45,10 @@ class SquareMosaic(private val areas: List<Area>, private val scaleX: Float = 1f
         val g2d = image.graphics as Graphics2D
         areas.forEach { area ->
             if (area.width > 0 && area.height > 0) {
-                var x = (area.x * scaleX).roundToInt()
-                var y = (area.y * scaleY).roundToInt()
-                var width = (area.width * scaleX).roundToInt()
-                var height = (area.height * scaleY).roundToInt()
+                var x = area.x
+                var y = area.y
+                var width = area.width
+                var height = area.height
 
                 if (x + width > squaredImage.width) width = squaredImage.width - x
                 if (y + height > squaredImage.height) height = squaredImage.height - y
@@ -61,12 +60,10 @@ class SquareMosaic(private val areas: List<Area>, private val scaleX: Float = 1f
                     g2d.drawImage(areaImage, x, y, null)
                 } catch (e: Exception) {
                     logger.error("""${"\n"}
-                        scale          : x $scaleX, y $scaleY
                         image          : w ${image.width}, h ${image.height}
                         squareImage    : w ${squaredImage.width}, h ${squaredImage.height}
                         correction     : x $x, y $y, w $width, h $height
                         area (original): x ${area.x}, y ${area.y}, w ${area.width}, h ${area.height}
-                        area (scaled)  : x ${(area.x * scaleX).roundToInt()}, y ${(area.y * scaleY).roundToInt()}, w ${(area.width * scaleX).roundToInt()}, h ${(area.height * scaleY).roundToInt()}, maxX ${(area.width * scaleX + area.x * scaleX).roundToInt()}, maxY ${(area.height * scaleY + area.y * scaleY).roundToInt()}
                     """.trimIndent())
                 }
             }
