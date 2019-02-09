@@ -26,10 +26,8 @@ class Voronoi : JFrame("Voronoi Diagram") {
         val spacingY = scaledSourceHeight / cells
 
         val points = arrayListOf<Pair<Int, Int>>()
-        val points2 = Array(cells * cells) { Pair(0, 0) }
 
         val start4 = System.currentTimeMillis()
-        var currentPoint = 0
         for (x in 0 until scaledSourceWidth step spacingX) {
             for (y in 0 until scaledSourceHeight step spacingY) {
 
@@ -44,27 +42,32 @@ class Voronoi : JFrame("Voronoi Diagram") {
                 if (yr < 0) xr = 0
 
                 points.add(Pair(xr, yr))
-                points2[currentPoint] = Pair(xr, yr) // TODO -,-"
-                currentPoint++
             }
         }
-        println("Calculate points: " + (System.currentTimeMillis() - start4) / 1000f)
+        println("Calculate ${points.size} points: " + (System.currentTimeMillis() - start4) / 1000f + "s")
 
         val start3 = System.currentTimeMillis()
+        var ms = 0f
         for (x in 0 until scaledSourceWidth) {
             for (y in 0 until scaledSourceHeight) {
                 var n = 0
 
-                val foobar = points2.filter { x >= it.first - spacingX && x <= it.first + spacingX && y >= it.second - spacingY && y <= it.second + spacingY }
+                val start5 = System.nanoTime()
+                val xRange = x - spacingX .. x + spacingX
+                val yRange = y - spacingY .. y + spacingY
 
-                for (i in 0 until foobar.size) {
-                    if (distSq(foobar[i].first, x, foobar[i].second, y) < distSq(foobar[n].first, x, foobar[n].second, y)) n = i
+                val adjacentPoints = points.filter { xRange.contains(it.first) && yRange.contains(it.second) }
+                ms += (System.nanoTime() - start5)
+
+                for (i in 0 until adjacentPoints.size) {
+                    if (distSq(adjacentPoints[i].first, x, adjacentPoints[i].second, y) < distSq(adjacentPoints[n].first, x, adjacentPoints[n].second, y)) n = i
                 }
-                crystals.setRGB(x, y, scaledSource.getRGB(foobar[n].first, foobar[n].second))
+                crystals.setRGB(x, y, scaledSource.getRGB(adjacentPoints[n].first, adjacentPoints[n].second))
             }
         }
-        println("Get colours and render: " + (System.currentTimeMillis() - start3) / 1000f)
-        println("Finished ($cells² cells): " + (System.currentTimeMillis() - start) / 1000f)
+        println("Crunch: ${ms / 1_000_000f} ms")
+        println("Get colours and render: " + (System.currentTimeMillis() - start3) / 1000f + "s")
+        println("Finished ($cells² cells): " + (System.currentTimeMillis() - start) / 1000f + "s")
 
         return Scalr.resize(crystals, Scalr.Method.ULTRA_QUALITY, source.width, source.height, Scalr.OP_ANTIALIAS)
     }
@@ -78,7 +81,7 @@ class Voronoi : JFrame("Voronoi Diagram") {
         defaultCloseOperation = EXIT_ON_CLOSE
         this.isVisible = true
 
-        for (i in 60 downTo 48) {
+        for (i in 52 downTo 48) {
             val scaleFactor = 3
             println("\n\nScale factor: $scaleFactor, Cells: $i")
             canvas = Scalr.resize(
