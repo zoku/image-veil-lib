@@ -51,7 +51,7 @@ class Crystallize(private val areas: List<Area>, private val cells: Int = 60, pr
                 val xRange = x - spacingX .. x + spacingX
                 val yRange = y - spacingY .. y + spacingY
 
-                val adjacentPoints = points.filter { xRange.contains(it.first) && yRange.contains(it.second) }
+                val adjacentPoints = points.filter { it.first in xRange && it.second in yRange }
 
                 for (i in 0 until adjacentPoints.size) {
                     if (distSq(adjacentPoints[i].first, x, adjacentPoints[i].second, y) < distSq(adjacentPoints[n].first, x, adjacentPoints[n].second, y)) n = i
