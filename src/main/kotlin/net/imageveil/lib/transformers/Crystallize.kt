@@ -1,7 +1,6 @@
 package net.imageveil.lib.transformers
 
 import net.imageveil.lib.domain.Area
-import org.imgscalr.Scalr
 import org.slf4j.LoggerFactory
 import java.awt.Graphics2D
 import java.awt.image.BufferedImage
@@ -11,7 +10,7 @@ import kotlin.random.Random
 
 class Crystallize(private val areas: List<Area>, private val cells: Int = 60) : Transformer {
     private val logger = LoggerFactory.getLogger("Transformers - Crystallize")
-    private val r = Random
+    private val rng = Random(System.currentTimeMillis())
 
     override fun transform(image: BufferedImage): BufferedImage {
         val crystals = BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB)
@@ -19,7 +18,6 @@ class Crystallize(private val areas: List<Area>, private val cells: Int = 60) : 
         // Prepare
         val cellWidth = image.width / cells
         val cellHeight = image.height / cells
-        val rng = Random(System.currentTimeMillis())
 
         val xs = IntArray(cells * cells)
         val ys = IntArray(cells * cells)
