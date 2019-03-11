@@ -12,7 +12,7 @@ import kotlin.math.min
 import kotlin.random.Random
 
 class VoronoiTest : JFrame() {
-    private val catImage: BufferedImage = ImageIO.read(File(VoronoiTest::class.java.getResource("/cat.jpg").file))
+    private val catImage: BufferedImage = ImageIO.read(File(VoronoiTest::class.java.getResource("/cat.jpg").toURI()))
     private var canvas = BufferedImage(catImage.width, catImage.height, BufferedImage.TYPE_INT_RGB)
 
     private fun run(cellsX: Int, cellsY: Int, image: BufferedImage): BufferedImage {

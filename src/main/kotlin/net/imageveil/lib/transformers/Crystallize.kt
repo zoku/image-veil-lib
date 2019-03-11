@@ -5,64 +5,66 @@ import org.imgscalr.Scalr
 import org.slf4j.LoggerFactory
 import java.awt.Graphics2D
 import java.awt.image.BufferedImage
+import kotlin.math.floor
+import kotlin.math.min
 import kotlin.random.Random
 
-class Crystallize(private val areas: List<Area>, private val cells: Int = 60, private val scaleFactor: Int = 3) : Transformer {
+class Crystallize(private val areas: List<Area>, private val cells: Int = 60) : Transformer {
     private val logger = LoggerFactory.getLogger("Transformers - Crystallize")
     private val r = Random
 
     override fun transform(image: BufferedImage): BufferedImage {
-        val start = System.currentTimeMillis()
+        val crystals = BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB)
 
-        val scaledSource = Scalr.resize(image, image.width / scaleFactor, image.height / scaleFactor)
-        val scaledSourceWidth = scaledSource.width
-        val scaledSourceHeight = scaledSource.height
-        var crystals = BufferedImage(scaledSourceWidth, scaledSourceHeight, BufferedImage.TYPE_INT_RGB)
+        // Prepare
+        val cellWidth = image.width / cells
+        val cellHeight = image.height / cells
+        val rng = Random(System.currentTimeMillis())
 
-        val spacingX = scaledSourceWidth / cells
-        val spacingY = scaledSourceHeight / cells
+        val xs = IntArray(cells * cells)
+        val ys = IntArray(cells * cells)
 
-        val points = arrayListOf<Pair<Int, Int>>()
-
-        val start4 = System.currentTimeMillis()
-        for (x in 0 until scaledSourceWidth step spacingX) {
-            for (y in 0 until scaledSourceHeight step spacingY) {
-
-                val factor = 2
-
-                var xr = x + (if (r.nextBoolean()) r.nextInt(spacingX / factor) else -r.nextInt(spacingX / factor)) + spacingX / 2
-                var yr = y + (if (r.nextBoolean()) r.nextInt(spacingY / factor) else -r.nextInt(spacingY / factor)) + spacingY / 2
-
-                if (xr >= scaledSourceWidth) xr = scaledSourceWidth - 1
-                if (xr < 0) xr = 0
-                if (yr >= scaledSourceHeight) yr = scaledSourceHeight - 1
-                if (yr < 0) xr = 0
-
-                points.add(Pair(xr, yr))
+        // Generate cells
+        for (y in 0 until cells) {
+            for (x in 0 until cells) {
+                xs[y * cells + x] = x * cellWidth + rng.nextInt(cellWidth)
+                ys[y * cells + x] = y * cellHeight + rng.nextInt(cellHeight)
             }
         }
-        logger.debug("Calculate points: " + (System.currentTimeMillis() - start4) / 1000f)
 
-        val start3 = System.currentTimeMillis()
-        for (x in 0 until scaledSourceWidth) {
-            for (y in 0 until scaledSourceHeight) {
-                var n = 0
+        // Draw
+        for (y in 0 until image.height) {
+            for (x in 0 until image.width) {
+                val currentCellX = min(floor(x.toDouble() / cellWidth.toDouble()).toInt(), cells - 1)
+                val currentCellY = min(floor(y.toDouble() / cellHeight.toDouble()).toInt(), cells - 1)
 
-                val xRange = x - spacingX .. x + spacingX
-                val yRange = y - spacingY .. y + spacingY
+                val nearestPoint = currentCellY * cells + currentCellX
 
-                val adjacentPoints = points.filter { it.first in xRange && it.second in yRange }
+                val displacements = intArrayOf(
+                    nearestPoint - cells - 1,
+                    nearestPoint - cells,
+                    nearestPoint - cells + 1,
+                    nearestPoint - 1,
+                    nearestPoint,
+                    nearestPoint + 1,
+                    nearestPoint + cells - 1,
+                    nearestPoint + cells,
+                    nearestPoint + cells + 1
+                )
 
-                for (i in 0 until adjacentPoints.size) {
-                    if (distSq(adjacentPoints[i].first, x, adjacentPoints[i].second, y) < distSq(adjacentPoints[n].first, x, adjacentPoints[n].second, y)) n = i
+                val adjacentPoints = arrayListOf<Int>()
+                displacements.forEach {
+                    if (it >= 0 && it <= xs.lastIndex) { adjacentPoints.add(it) }
                 }
-                crystals.setRGB(x, y, scaledSource.getRGB(adjacentPoints[n].first, adjacentPoints[n].second))
+
+                var n = 0
+                adjacentPoints.forEach {
+                    if (distSq(xs[it], x, ys[it], y) < distSq(xs[n], x, ys[n], y)) n = it
+                }
+
+                crystals.setRGB(x, y, image.getRGB(xs[n], ys[n]))
             }
         }
-        logger.debug("Get colours and render: " + (System.currentTimeMillis() - start3) / 1000f)
-
-        crystals = Scalr.resize(crystals, Scalr.Method.ULTRA_QUALITY, image.width, image.height, Scalr.OP_ANTIALIAS)
-        logger.debug("Finished ($cells² cells): " + (System.currentTimeMillis() - start) / 1000f)
 
         // Apply to areas of original
         val g2d = image.graphics as Graphics2D
